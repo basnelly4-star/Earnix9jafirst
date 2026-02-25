@@ -12,16 +12,24 @@ export const WelcomeModal = () => {
 
   useEffect(() => {
     const seen = localStorage.getItem("chixx9ja_welcome_seen");
-    if (!seen) setIsOpen(true);
+    const telegramStatus = localStorage.getItem("chixx9ja_telegram_joined");
+    if (!seen) {
+      setIsOpen(true);
+      if (telegramStatus === "true") {
+        setTelegramJoined(true);
+      }
+    }
   }, []);
 
   const close = () => {
     localStorage.setItem("chixx9ja_welcome_seen", "true");
+    localStorage.removeItem("chixx9ja_telegram_joined");
     setIsOpen(false);
     setStep(1);
   };
 
   const joinTelegram = () => {
+    localStorage.setItem("chixx9ja_telegram_joined", "true");
     setTelegramJoined(true);
     window.location.href = "https://t.me/earnix9jachannel";
   };
