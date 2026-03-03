@@ -32,7 +32,7 @@ const Withdraw = () => {
     "Unity Bank", "Wema Bank", "Zenith Bank", "Moniepoint MFB", "VFD MFB"
   ].sort();
 
-  const MINIMUM_WITHDRAW = 200000;
+  const MINIMUM_WITHDRAW = 180000;
 
   useEffect(() => {
     loadProfile();
@@ -165,7 +165,7 @@ const Withdraw = () => {
             <ul className="space-y-2">
               <li className="flex items-center gap-2 text-sm text-muted-foreground">
                 <CheckCircle2 className="w-4 h-4 text-blue-500" />
-                Minimum withdrawal balance: ₦200,000
+                Minimum withdrawal balance: ₦180,000
               </li>
               <li className="flex items-center gap-2 text-sm text-muted-foreground">
                 <CheckCircle2 className="w-4 h-4 text-blue-500" />

