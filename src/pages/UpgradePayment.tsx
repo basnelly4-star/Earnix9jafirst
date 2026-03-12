@@ -84,17 +84,23 @@ const UpgradePayment = () => {
 
       <div className="p-6 space-y-6">
         <Card className="bg-gradient-to-br from-card to-card/80 backdrop-blur-lg border-border/50 p-6">
-          <h2 className={`text-2xl font-bold mb-4 bg-gradient-to-r ${tier.color} bg-clip-text text-transparent`}>
+          <h2
+            className={`text-2xl font-bold mb-4 bg-gradient-to-r ${tier.color} bg-clip-text text-transparent`}
+          >
             {tier.level} Upgrade
           </h2>
           <div className="space-y-2 mb-6">
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Earnings per referral:</span>
+              <span className="text-muted-foreground">
+                Earnings per referral:
+              </span>
               <span className="font-bold">₦{tier.amount.toLocaleString()}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Upgrade price:</span>
-              <span className="font-bold text-primary">₦{tier.price.toLocaleString()}</span>
+              <span className="font-bold text-primary">
+                ₦{tier.price.toLocaleString()}
+              </span>
             </div>
           </div>
         </Card>
@@ -104,16 +110,19 @@ const UpgradePayment = () => {
           <div className="space-y-3 text-sm mb-6">
             <p className="flex gap-2">
               <span className="font-bold">1.</span>
-              <span>Transfer ₦{tier.price.toLocaleString()} to the account details below</span>
+              <span>
+                Transfer ₦{tier.price.toLocaleString()} to the account details
+                below
+              </span>
             </p>
             <div className="bg-muted/50 p-4 rounded-lg space-y-2">
               <p className="text-sm font-semibold">Bank Details</p>
               <div className="space-y-1 text-sm">
                 <div className="flex items-center justify-between">
-                  <p className="font-mono">Account: 5882180092</p>
-                  <CopyButton text="5882180092" />
+                  <p className="font-mono">Account: 6636110028</p>
+                  <CopyButton text="6636110028" />
                 </div>
-                <p>Name: Success Ozioma Adiela</p>
+                <p>Name: Mavelous Madubuchi Nnaemeka</p>
                 <p>Bank: MONIEPOINT</p>
               </div>
             </div>

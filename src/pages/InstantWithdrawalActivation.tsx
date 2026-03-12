@@ -78,13 +78,14 @@ const InstantWithdrawalActivation = () => {
               ⚡ Instant Withdrawal Activation
             </h3>
             <p className="text-sm text-muted-foreground">
-              Pay a one-time activation fee of ₦12,600 to unlock instant withdrawals without referral requirements.
+              Pay a one-time activation fee of ₦12,600 to unlock instant
+              withdrawals without referral requirements.
             </p>
           </div>
 
           <div className="mb-6 p-6 bg-muted/50 rounded-lg space-y-4">
             <h3 className="font-semibold text-lg mb-4">Payment Details</h3>
-            
+
             <div className="space-y-3">
               <div className="flex justify-between items-center p-3 bg-background/50 rounded">
                 <span className="text-sm text-muted-foreground">Amount</span>
@@ -92,18 +93,24 @@ const InstantWithdrawalActivation = () => {
               </div>
 
               <div className="flex justify-between items-center p-3 bg-background/50 rounded">
-                <span className="text-sm text-muted-foreground">Account Number</span>
+                <span className="text-sm text-muted-foreground">
+                  Account Number
+                </span>
                 <div className="flex items-center gap-2">
-                  <span className="font-semibold">5882180092</span>
-                  <CopyButton text="5882180092" />
+                  <span className="font-semibold">6636110028</span>
+                  <CopyButton text="6636110028" />
                 </div>
               </div>
 
               <div className="flex justify-between items-center p-3 bg-background/50 rounded">
-                <span className="text-sm text-muted-foreground">Account Name</span>
+                <span className="text-sm text-muted-foreground">
+                  Account Name
+                </span>
                 <div className="flex items-center gap-2">
-                  <span className="font-semibold">Success Ozioma Adiela</span>
-                  <CopyButton text="Success Ozioma Adiela" />
+                  <span className="font-semibold">
+                    Mavelous Madubuchi Nnaemeka
+                  </span>
+                  <CopyButton text="Mavelous Madubuchi Nnaemeka" />
                 </div>
               </div>
 
@@ -115,7 +122,9 @@ const InstantWithdrawalActivation = () => {
                 </div>
               </div>
               <div className="flex justify-between items-center p-3 bg-background/50 rounded">
-                <span className="text-sm text-muted-foreground">Verification ID</span>
+                <span className="text-sm text-muted-foreground">
+                  Verification ID
+                </span>
                 <div className="flex items-center gap-2">
                   <span className="font-semibold font-mono">10077A</span>
                   <CopyButton text="10077A" />
