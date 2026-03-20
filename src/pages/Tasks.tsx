@@ -40,16 +40,50 @@ const Tasks = () => {
     },
     {
       id: 2,
-      title: "Join WhatsApp Group", 
+      title: "Join WhatsApp Group",
       description: "Join our WhatsApp community for instant updates",
       reward: "₦5,000",
       link: "https://whatsapp.com/channel/0029VbCUz1HF6smt6EnLWw0F",
     },
     {
       id: 3,
-      title: "Join TikTok Community",
-      description: "Join our TikTok community for exclusive content!",
+      title: "Earn Extra",
+      description:
+        "Tap on our sponsorship ads to earn extra and get closer to your minimum withdrawal!",
       reward: "₦5,000",
+      link: `https://otieu.com/4/10573002 `,
+    },
+    {
+      id: 7,
+      title: "Sponsorship ads",
+      description:
+        "Tap on our sponsorship ads to earn extra and get closer to your minimum withdrawal!",
+      reward: "₦5,000",
+      link: `https://otieu.com/4/10573002 `,
+    },
+    {
+      id: 8,
+      title: "Earn More",
+      description:
+        "Tap on our sponsorship ads to earn extra and get closer to your minimum withdrawal!",
+      reward: "₦5,000",
+      link: `https://otieu.com/4/10573002 `,
+    },
+    {
+      id: 9,
+      title: "JEarmers",
+      description:
+        "Tap on our sponsorship ads to earn extra and get closer to your minimum withdrawal!",
+      reward: "₦5,000",
+      link: `https://otieu.com/4/10573002 `,
+    },
+    {
+      id: 10,
+      title: "Earn more",
+      description:
+        "Tap on our sponsorship ads to earn extra and get closer to your minimum withdrawal!",
+      reward: "₦5,000",
+      link: `https://otieu.com/4/10573002 `,
     },
   ];
 
