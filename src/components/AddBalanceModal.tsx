@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 const FEE_PERCENT = 2;
 const BANK_DETAILS = {
   bankName: "Moniepoint",
-  accountName: "Grace Onuoha,
+  accountName: "Grace Onuoha",
   accountNumber: "6707120378",
 };
 
