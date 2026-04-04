@@ -69,12 +69,26 @@ const Dashboard = () => {
   }, [lastClaimTime]);
 
   const checkAuth = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      setTimeout(() => navigate("/auth"), 100);
-    } else {
-      setUser(session.user);
-      loadProfile(session.user.id);
+    try {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (error) {
+        console.warn('[Dashboard] Session check error:', error);
+        // Don't redirect immediately on transient errors, wait a moment and retry
+        setTimeout(() => checkAuth(), 1000);
+        return;
+      }
+      
+      if (!session) {
+        setTimeout(() => navigate("/auth"), 100);
+      } else {
+        setUser(session.user);
+        loadProfile(session.user.id);
+      }
+    } catch (error) {
+      console.warn('[Dashboard] Session check failed:', error);
+      // If session check throws, retry after a delay (handles network/timeout issues)
+      setTimeout(() => checkAuth(), 2000);
     }
   };
 

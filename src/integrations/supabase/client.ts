@@ -17,17 +17,24 @@ const fetchWithAuthRetry: typeof fetch = async (input, init) => {
       : input.url;
 
   const isAuthTokenRequest = requestUrl.includes("/auth/v1/token");
-  const maxAttempts = isAuthTokenRequest ? 3 : 1;
+  // More aggressive retries for token endpoints (handles refresh_token and password grants)
+  const maxAttempts = isAuthTokenRequest ? 5 : 1;
 
   let lastError: unknown;
+  let lastResponse: Response | null = null;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
       const response = await fetch(input, init);
+      lastResponse = response;
 
+      // Return successful responses or non-retryable errors immediately
       if (!isAuthTokenRequest || !RETRYABLE_STATUS_CODES.has(response.status) || attempt === maxAttempts) {
         return response;
       }
+      
+      // Clone the response before the next iteration to prevent reading body twice
+      response.body?.cancel?.();
     } catch (error) {
       lastError = error;
       if (!isAuthTokenRequest || attempt === maxAttempts) {
@@ -35,7 +42,15 @@ const fetchWithAuthRetry: typeof fetch = async (input, init) => {
       }
     }
 
-    await wait(300 * attempt);
+    // Exponential backoff with jitter: 500ms, 1s, 2s, 4s for attempts 1-4
+    const baseDelay = Math.pow(2, attempt - 1) * 500;
+    const jitter = Math.random() * 200; // 0-200ms jitter
+    await wait(baseDelay + jitter);
+  }
+
+  // Return the last 504 response rather than throwing, let Supabase client handle it
+  if (lastResponse && RETRYABLE_STATUS_CODES.has(lastResponse.status)) {
+    return lastResponse;
   }
 
   throw lastError instanceof Error ? lastError : new Error("Auth request failed");
@@ -52,5 +67,47 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     storage: localStorage,
     persistSession: true,
     autoRefreshToken: true,
+    detectSessionInUrl: true,
+    flowType: "pkce",
   }
 });
+
+// Monitor auth state and gracefully handle refresh token failures
+supabase.auth.onAuthStateChange(async (event, session) => {
+  // Log auth changes for debugging
+  if (event === 'TOKEN_REFRESHED') {
+    console.debug('[Auth] Token refreshed successfully');
+  } else if (event === 'SIGNED_OUT') {
+    console.debug('[Auth] User signed out');
+  } else if (event === 'SIGNED_IN') {
+    console.debug('[Auth] User signed in');
+  }
+});
+
+// Add a periodic token refresh monitor to catch and log refresh failures
+let refreshMonitorInterval: NodeJS.Timeout | null = null;
+
+const startRefreshMonitor = () => {
+  if (refreshMonitorInterval) return;
+  
+  refreshMonitorInterval = setInterval(async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      // Session check succeeded, monitor continues
+    } catch (error) {
+      console.warn('[Auth] Session check failed, clearing stale session', error);
+      // If session check fails repeatedly, clear localStorage to prevent infinite loops
+      localStorage.removeItem('sb-supabase-auth-token');
+    }
+  }, 30000); // Check every 30 seconds
+};
+
+startRefreshMonitor();
+
+// Export the monitor function for cleanup if needed
+export const stopRefreshMonitor = () => {
+  if (refreshMonitorInterval) {
+    clearInterval(refreshMonitorInterval);
+    refreshMonitorInterval = null;
+  }
+};
