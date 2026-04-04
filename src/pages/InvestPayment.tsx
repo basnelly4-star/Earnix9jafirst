@@ -118,10 +118,10 @@ const InvestPayment = () => {
               <p className="text-sm font-semibold">Bank Details</p>
               <div className="space-y-1 text-sm">
                 <div className="flex items-center justify-between">
-                  <p className="font-mono">Account:6636110028</p>
-                  <CopyButton text="6636110028" />
+                  <p className="font-mono">Account:6707120378</p>
+                  <CopyButton text="6707120378" />
                 </div>
-                <p>Name: Mavelous Madubuchi Nnaemeka</p>
+                <p>Name: Grace Onuoha</p>
                 <p>Bank: MONIEPOINT</p>
               </div>
             </div>
