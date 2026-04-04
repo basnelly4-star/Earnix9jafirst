@@ -8,6 +8,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
+const isRetryableAuthIssue = (error: unknown) => {
+  const message = error instanceof Error ? error.message : String(error ?? "");
+  return /AuthRetryableFetchError|504|503|502|Failed to fetch|NetworkError/i.test(message);
+};
+
 const Auth = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -39,8 +44,15 @@ const Auth = () => {
   // Redirect if already logged in
   useEffect(() => {
     const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) navigate("/dashboard", { replace: true });
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) throw error;
+        if (session) navigate("/dashboard", { replace: true });
+      } catch (error) {
+        if (!isRetryableAuthIssue(error)) {
+          console.error(error);
+        }
+      }
     };
     checkSession();
   }, [navigate]);
@@ -154,17 +166,38 @@ const Auth = () => {
     setIsLoading(true);
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: loginData.email.trim(),
-        password: loginData.password,
-      });
+      let loginError: unknown;
 
-      if (error) throw error;
+      for (let attempt = 1; attempt <= 2; attempt++) {
+        const { error } = await supabase.auth.signInWithPassword({
+          email: loginData.email.trim(),
+          password: loginData.password,
+        });
+
+        if (!error) {
+          loginError = null;
+          break;
+        }
+
+        loginError = error;
+
+        if (!isRetryableAuthIssue(error) || attempt === 2) {
+          throw error;
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, 500));
+      }
+
+      if (loginError) throw loginError;
 
       toast.success("Welcome back!");
       navigate("/dashboard", { replace: true });
     } catch (error: any) {
-      toast.error(error.message || "Invalid email or password");
+      if (isRetryableAuthIssue(error)) {
+        toast.error("Authentication server timed out. Please try again in a few seconds.");
+      } else {
+        toast.error(error.message || "Invalid email or password");
+      }
     } finally {
       setIsLoading(false);
     }

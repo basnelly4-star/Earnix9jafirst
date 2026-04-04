@@ -5,10 +5,49 @@ import type { Database } from './types';
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
+const RETRYABLE_STATUS_CODES = new Set([502, 503, 504]);
+
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const fetchWithAuthRetry: typeof fetch = async (input, init) => {
+  const requestUrl = typeof input === "string"
+    ? input
+    : input instanceof URL
+      ? input.toString()
+      : input.url;
+
+  const isAuthTokenRequest = requestUrl.includes("/auth/v1/token");
+  const maxAttempts = isAuthTokenRequest ? 3 : 1;
+
+  let lastError: unknown;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const response = await fetch(input, init);
+
+      if (!isAuthTokenRequest || !RETRYABLE_STATUS_CODES.has(response.status) || attempt === maxAttempts) {
+        return response;
+      }
+    } catch (error) {
+      lastError = error;
+      if (!isAuthTokenRequest || attempt === maxAttempts) {
+        throw error;
+      }
+    }
+
+    await wait(300 * attempt);
+  }
+
+  throw lastError instanceof Error ? lastError : new Error("Auth request failed");
+};
+
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+  global: {
+    fetch: fetchWithAuthRetry,
+  },
   auth: {
     storage: localStorage,
     persistSession: true,
