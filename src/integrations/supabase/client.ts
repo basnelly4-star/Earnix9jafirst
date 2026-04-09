@@ -17,6 +17,20 @@ const RETRYABLE_STATUS_CODES = new Set([502, 503, 504]);
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+const isAbortOrNetworkError = (error: unknown) => {
+  if (error instanceof DOMException && error.name === "AbortError") return true;
+  const message = error instanceof Error ? error.message : String(error ?? "");
+  return /aborted|abort|networkerror|failed to fetch|ERR_ABORTED/i.test(message);
+};
+
+const createRequestInitForRetry = (init: RequestInit | undefined, ignoreSignal: boolean): RequestInit | undefined => {
+  if (!init) return init;
+  if (!ignoreSignal) return init;
+
+  const { signal: _signal, ...rest } = init;
+  return rest;
+};
+
 const fetchWithAuthRetry: typeof fetch = async (input, init) => {
   const requestUrl = typeof input === "string"
     ? input
@@ -33,7 +47,8 @@ const fetchWithAuthRetry: typeof fetch = async (input, init) => {
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
-      const response = await fetch(input, init);
+      const requestInit = createRequestInitForRetry(init, isAuthTokenRequest);
+      const response = await fetch(input, requestInit);
       lastResponse = response;
 
       // Return successful responses or non-retryable errors immediately
@@ -45,7 +60,9 @@ const fetchWithAuthRetry: typeof fetch = async (input, init) => {
       response.body?.cancel?.();
     } catch (error) {
       lastError = error;
-      if (!isAuthTokenRequest || attempt === maxAttempts) {
+      const canRetryThrownError = isAuthTokenRequest && isAbortOrNetworkError(error);
+
+      if ((!isAuthTokenRequest && !canRetryThrownError) || attempt === maxAttempts) {
         throw error;
       }
     }
