@@ -23,12 +23,50 @@ const isAbortOrNetworkError = (error: unknown) => {
   return /aborted|abort|networkerror|failed to fetch|ERR_ABORTED/i.test(message);
 };
 
-const createRequestInitForRetry = (init: RequestInit | undefined, ignoreSignal: boolean): RequestInit | undefined => {
-  if (!init) return init;
-  if (!ignoreSignal) return init;
+const createRequestInitForRetry = async (
+  input: RequestInfo | URL,
+  init: RequestInit | undefined,
+  ignoreSignal: boolean,
+): Promise<{ requestInput: RequestInfo | URL; requestInit: RequestInit | undefined }> => {
+  if (!ignoreSignal) {
+    return { requestInput: input, requestInit: init };
+  }
 
-  const { signal: _signal, ...rest } = init;
-  return rest;
+  const initWithoutSignal = (() => {
+    if (!init) return undefined;
+    const { signal: _signal, ...rest } = init;
+    return rest;
+  })();
+
+  if (input instanceof Request) {
+    const method = initWithoutSignal?.method ?? input.method;
+    const headers = initWithoutSignal?.headers ?? input.headers;
+    const bodyFromInit = initWithoutSignal?.body;
+
+    let body: BodyInit | undefined = bodyFromInit;
+    if (!body && method !== "GET" && method !== "HEAD") {
+      const clonedRequest = input.clone();
+      const payload = await clonedRequest.arrayBuffer();
+      if (payload.byteLength > 0) {
+        body = payload;
+      }
+    }
+
+    return {
+      requestInput: input.url,
+      requestInit: {
+        ...initWithoutSignal,
+        method,
+        headers,
+        body,
+      },
+    };
+  }
+
+  return {
+    requestInput: input,
+    requestInit: initWithoutSignal,
+  };
 };
 
 const fetchWithAuthRetry: typeof fetch = async (input, init) => {
@@ -47,8 +85,8 @@ const fetchWithAuthRetry: typeof fetch = async (input, init) => {
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
-      const requestInit = createRequestInitForRetry(init, isAuthTokenRequest);
-      const response = await fetch(input, requestInit);
+      const { requestInput, requestInit } = await createRequestInitForRetry(input, init, isAuthTokenRequest);
+      const response = await fetch(requestInput, requestInit);
       lastResponse = response;
 
       // Return successful responses or non-retryable errors immediately

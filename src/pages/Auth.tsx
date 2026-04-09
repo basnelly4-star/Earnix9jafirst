@@ -172,14 +172,16 @@ const Auth = () => {
 
     try {
       let loginError: unknown;
+      let loginSession: unknown = null;
 
       for (let attempt = 1; attempt <= 2; attempt++) {
-        const { error } = await supabase.auth.signInWithPassword({
+        const { data, error } = await supabase.auth.signInWithPassword({
           email: loginData.email.trim(),
           password: loginData.password,
         });
 
         if (!error) {
+          loginSession = data.session;
           loginError = null;
           break;
         }
@@ -194,6 +196,9 @@ const Auth = () => {
       }
 
       if (loginError) throw loginError;
+      if (!loginSession) {
+        throw new Error("Login succeeded but session was not created. Please try again.");
+      }
 
       toast.success("Welcome back!");
       navigate("/dashboard", { replace: true });

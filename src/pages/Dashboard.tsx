@@ -24,19 +24,29 @@ const Dashboard = () => {
   const [showTopUp, setShowTopUp] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState("Ready!");
   const authRetryCountRef = useRef(0);
+  const dashboardBootstrappedRef = useRef(false);
 
   useEffect(() => {
+    const bootstrapTimeout = window.setTimeout(() => {
+      if (!dashboardBootstrappedRef.current) {
+        setLoading(false);
+        toast.error("Dashboard loading timed out. Please login again.");
+        navigate("/auth");
+      }
+    }, 15000);
+
     checkAuth();
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!session) {
+      if (event === "SIGNED_OUT") {
         navigate("/auth");
-      } else {
+      } else if (session) {
         setUser(session.user);
         loadProfile(session.user.id);
       }
     });
 
     return () => {
+      window.clearTimeout(bootstrapTimeout);
       authListener.subscription.unsubscribe();
     };
   }, [navigate]);
@@ -111,6 +121,7 @@ const Dashboard = () => {
       }
 
       console.warn('[Dashboard] Session check failed:', error);
+      dashboardBootstrappedRef.current = true;
       if (authRetryCountRef.current < 3) {
         authRetryCountRef.current += 1;
         setTimeout(() => checkAuth(), 2000);
