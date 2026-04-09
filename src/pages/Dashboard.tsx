@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -23,6 +23,7 @@ const Dashboard = () => {
   const [lastClaimTime, setLastClaimTime] = useState<Date | null>(null);
   const [showTopUp, setShowTopUp] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState("Ready!");
+  const authRetryCountRef = useRef(0);
 
   useEffect(() => {
     checkAuth();
@@ -74,12 +75,21 @@ const Dashboard = () => {
       
       if (error) {
         console.warn('[Dashboard] Session check error:', error);
-        // Don't redirect immediately on transient errors, wait a moment and retry
-        setTimeout(() => checkAuth(), 1000);
+        if (authRetryCountRef.current < 3) {
+          authRetryCountRef.current += 1;
+          setTimeout(() => checkAuth(), 1000);
+        } else {
+          setLoading(false);
+          toast.error("Authentication check failed. Please login again.");
+          navigate("/auth");
+        }
         return;
       }
       
+      authRetryCountRef.current = 0;
+
       if (!session) {
+        setLoading(false);
         setTimeout(() => navigate("/auth"), 100);
       } else {
         setUser(session.user);
@@ -87,9 +97,38 @@ const Dashboard = () => {
       }
     } catch (error) {
       console.warn('[Dashboard] Session check failed:', error);
-      // If session check throws, retry after a delay (handles network/timeout issues)
-      setTimeout(() => checkAuth(), 2000);
+      if (authRetryCountRef.current < 3) {
+        authRetryCountRef.current += 1;
+        setTimeout(() => checkAuth(), 2000);
+      } else {
+        setLoading(false);
+        toast.error("Network issue during authentication. Please try again.");
+        navigate("/auth");
+      }
     }
+  };
+
+  const ensureProfileExists = async (userId: string) => {
+    const { data: userData } = await supabase.auth.getUser();
+    const authUser = userData.user;
+
+    const generatedRefCode = Math.random().toString(36).slice(2, 8).toUpperCase();
+    const fullNameFromMeta = (authUser?.user_metadata?.fullName || authUser?.user_metadata?.full_name || "").toString().trim();
+    const fallbackName = fullNameFromMeta || authUser?.email?.split("@")[0] || "User";
+
+    const newProfile = {
+      id: userId,
+      email: authUser?.email || "",
+      full_name: fallbackName,
+      referral_code: generatedRefCode,
+      balance: 0,
+      total_referrals: 0,
+    };
+
+    const { error: createError } = await supabase.from("profiles").upsert(newProfile);
+    if (createError) throw createError;
+
+    return newProfile;
   };
 
   const loadProfile = async (userId: string) => {
@@ -101,7 +140,13 @@ const Dashboard = () => {
         .maybeSingle();
 
       if (error) throw error;
-      setProfile(data);
+      let currentProfile = data;
+
+      if (!currentProfile) {
+        currentProfile = await ensureProfileExists(userId);
+      }
+
+      setProfile(currentProfile);
 
       const { data: claims } = await supabase
         .from("claims")
@@ -172,7 +217,25 @@ const Dashboard = () => {
     }
   };
 
-  if (loading || !profile) return null;
+  if (loading) {
+    return (
+      <div className="min-h-screen liquid-bg flex items-center justify-center">
+        <p className="text-muted-foreground">Loading dashboard...</p>
+      </div>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <div className="min-h-screen liquid-bg flex items-center justify-center p-6">
+        <Card className="w-full max-w-md p-6 text-center space-y-3">
+          <p className="font-semibold">Unable to load your profile</p>
+          <p className="text-sm text-muted-foreground">Please login again to continue.</p>
+          <Button onClick={() => navigate("/auth")}>Go to Login</Button>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen liquid-bg pb-20" style={{ position: 'relative', zIndex: 1 }}>
