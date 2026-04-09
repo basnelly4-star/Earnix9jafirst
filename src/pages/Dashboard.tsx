@@ -24,21 +24,12 @@ const Dashboard = () => {
   const [showTopUp, setShowTopUp] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState("Ready!");
   const authRetryCountRef = useRef(0);
-  const dashboardBootstrappedRef = useRef(false);
 
   useEffect(() => {
-    const bootstrapTimeout = window.setTimeout(() => {
-      if (!dashboardBootstrappedRef.current) {
-        setLoading(false);
-        toast.error("Dashboard loading timed out. Please login again.");
-        navigate("/auth");
-      }
-    }, 15000);
-
     checkAuth();
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_OUT") {
-        navigate("/auth");
+        setTimeout(() => checkAuth(), 300);
       } else if (session) {
         setUser(session.user);
         loadProfile(session.user.id);
@@ -46,7 +37,6 @@ const Dashboard = () => {
     });
 
     return () => {
-      window.clearTimeout(bootstrapTimeout);
       authListener.subscription.unsubscribe();
     };
   }, [navigate]);
@@ -105,30 +95,41 @@ const Dashboard = () => {
       
       authRetryCountRef.current = 0;
 
-      if (!session) {
-        setLoading(false);
-        setTimeout(() => navigate("/auth"), 100);
-      } else {
-        setUser(session.user);
-        loadProfile(session.user.id);
+      let userId = session?.user?.id;
+      let authUser = session?.user ?? null;
+
+      if (!userId) {
+        const { data: userData, error: userError } = await supabase.auth.getUser();
+        if (userError) throw userError;
+        userId = userData.user?.id;
+        authUser = userData.user ?? null;
       }
+
+      if (!userId) {
+        setLoading(false);
+        setTimeout(() => navigate("/auth", { replace: true }), 100);
+        return;
+      }
+
+      if (authUser) {
+        setUser(authUser);
+      }
+      loadProfile(userId);
     } catch (error) {
       const recovered = await recoverFromInvalidRefreshToken(error);
       if (recovered) {
         setLoading(false);
-        navigate("/auth");
+        navigate("/auth", { replace: true });
         return;
       }
 
       console.warn('[Dashboard] Session check failed:', error);
-      dashboardBootstrappedRef.current = true;
       if (authRetryCountRef.current < 3) {
         authRetryCountRef.current += 1;
         setTimeout(() => checkAuth(), 2000);
       } else {
         setLoading(false);
-        toast.error("Network issue during authentication. Please try again.");
-        navigate("/auth");
+        toast.error("Network issue while loading dashboard. Please refresh and try again.");
       }
     }
   };

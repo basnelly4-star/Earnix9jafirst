@@ -47,7 +47,17 @@ const Auth = () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
         if (error) throw error;
-        if (session) navigate("/dashboard", { replace: true });
+
+        if (session) {
+          navigate("/dashboard", { replace: true });
+          return;
+        }
+
+        const { data: userData, error: userError } = await supabase.auth.getUser();
+        if (userError) throw userError;
+        if (userData.user) {
+          navigate("/dashboard", { replace: true });
+        }
       } catch (error) {
         const recovered = await recoverFromInvalidRefreshToken(error);
         if (recovered) {
