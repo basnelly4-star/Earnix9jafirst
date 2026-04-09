@@ -4,6 +4,14 @@ import type { Database } from './types';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+const SUPABASE_PROJECT_REF = (() => {
+  try {
+    return new URL(SUPABASE_URL).hostname.split(".")[0] ?? "";
+  } catch {
+    return "";
+  }
+})();
+const SUPABASE_STORAGE_KEY = `sb-${SUPABASE_PROJECT_REF}-auth-token`;
 
 const RETRYABLE_STATUS_CODES = new Set([502, 503, 504]);
 
@@ -65,6 +73,7 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
   },
   auth: {
     storage: localStorage,
+    storageKey: SUPABASE_STORAGE_KEY,
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
@@ -72,42 +81,41 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
   }
 });
 
-// Monitor auth state and gracefully handle refresh token failures
-supabase.auth.onAuthStateChange(async (event, session) => {
-  // Log auth changes for debugging
-  if (event === 'TOKEN_REFRESHED') {
-    console.debug('[Auth] Token refreshed successfully');
-  } else if (event === 'SIGNED_OUT') {
-    console.debug('[Auth] User signed out');
-  } else if (event === 'SIGNED_IN') {
-    console.debug('[Auth] User signed in');
-  }
-});
-
-// Add a periodic token refresh monitor to catch and log refresh failures
-let refreshMonitorInterval: NodeJS.Timeout | null = null;
-
-const startRefreshMonitor = () => {
-  if (refreshMonitorInterval) return;
-  
-  refreshMonitorInterval = setInterval(async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      // Session check succeeded, monitor continues
-    } catch (error) {
-      console.warn('[Auth] Session check failed, clearing stale session', error);
-      // If session check fails repeatedly, clear localStorage to prevent infinite loops
-      localStorage.removeItem('sb-supabase-auth-token');
-    }
-  }, 30000); // Check every 30 seconds
+const isInvalidRefreshTokenError = (error: unknown) => {
+  const message = error instanceof Error ? error.message : String(error ?? "");
+  return /Invalid Refresh Token|Refresh Token Not Found|JWT expired|invalid_grant/i.test(message);
 };
 
-startRefreshMonitor();
+const clearSupabaseAuthStorage = () => {
+  const keysToRemove: string[] = [];
 
-// Export the monitor function for cleanup if needed
-export const stopRefreshMonitor = () => {
-  if (refreshMonitorInterval) {
-    clearInterval(refreshMonitorInterval);
-    refreshMonitorInterval = null;
+  for (let index = 0; index < localStorage.length; index += 1) {
+    const key = localStorage.key(index);
+    if (!key) continue;
+
+    const isSupabaseAuthKey = key.startsWith("sb-") && key.endsWith("-auth-token");
+    if (isSupabaseAuthKey) {
+      keysToRemove.push(key);
+    }
   }
+
+  if (!keysToRemove.includes(SUPABASE_STORAGE_KEY)) {
+    keysToRemove.push(SUPABASE_STORAGE_KEY);
+  }
+
+  keysToRemove.forEach((key) => localStorage.removeItem(key));
+};
+
+export const recoverFromInvalidRefreshToken = async (error: unknown) => {
+  if (!isInvalidRefreshTokenError(error)) return false;
+
+  clearSupabaseAuthStorage();
+
+  try {
+    await supabase.auth.signOut({ scope: "local" });
+  } catch {
+    // ignore - storage has already been cleared
+  }
+
+  return true;
 };

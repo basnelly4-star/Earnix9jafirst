@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { recoverFromInvalidRefreshToken, supabase } from "@/integrations/supabase/client";
 
 const isRetryableAuthIssue = (error: unknown) => {
   const message = error instanceof Error ? error.message : String(error ?? "");
@@ -49,6 +49,11 @@ const Auth = () => {
         if (error) throw error;
         if (session) navigate("/dashboard", { replace: true });
       } catch (error) {
+        const recovered = await recoverFromInvalidRefreshToken(error);
+        if (recovered) {
+          return;
+        }
+
         if (!isRetryableAuthIssue(error)) {
           console.error(error);
         }
@@ -193,6 +198,12 @@ const Auth = () => {
       toast.success("Welcome back!");
       navigate("/dashboard", { replace: true });
     } catch (error: any) {
+      const recovered = await recoverFromInvalidRefreshToken(error);
+      if (recovered) {
+        toast.error("Your previous session expired. Please login again.");
+        return;
+      }
+
       if (isRetryableAuthIssue(error)) {
         toast.error("Authentication server timed out. Please try again in a few seconds.");
       } else {

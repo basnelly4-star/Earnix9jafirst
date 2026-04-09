@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Eye, EyeOff, Copy, Gift, Banknote, CheckCircle2, History, Disc3, Radio, Shield, TrendingUp, Users, Home, Gamepad2, User, Send } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { recoverFromInvalidRefreshToken, supabase } from "@/integrations/supabase/client";
 import { FloatingActionButton } from "@/components/FloatingActionButton";
 import { ArrowRight } from "lucide-react";
 import { WelcomeModal } from "@/components/WelcomeModal";
@@ -74,6 +74,13 @@ const Dashboard = () => {
       const { data: { session }, error } = await supabase.auth.getSession();
       
       if (error) {
+        const recovered = await recoverFromInvalidRefreshToken(error);
+        if (recovered) {
+          setLoading(false);
+          navigate("/auth");
+          return;
+        }
+
         console.warn('[Dashboard] Session check error:', error);
         if (authRetryCountRef.current < 3) {
           authRetryCountRef.current += 1;
@@ -96,6 +103,13 @@ const Dashboard = () => {
         loadProfile(session.user.id);
       }
     } catch (error) {
+      const recovered = await recoverFromInvalidRefreshToken(error);
+      if (recovered) {
+        setLoading(false);
+        navigate("/auth");
+        return;
+      }
+
       console.warn('[Dashboard] Session check failed:', error);
       if (authRetryCountRef.current < 3) {
         authRetryCountRef.current += 1;
@@ -125,10 +139,19 @@ const Dashboard = () => {
       total_referrals: 0,
     };
 
-    const { error: createError } = await supabase.from("profiles").upsert(newProfile);
+    const { error: createError } = await supabase.from("profiles").upsert(newProfile as any);
     if (createError) throw createError;
 
-    return newProfile;
+    const { data: createdProfile, error: fetchError } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (fetchError) throw fetchError;
+    if (!createdProfile) throw new Error("Failed to create profile");
+
+    return createdProfile;
   };
 
   const loadProfile = async (userId: string) => {
