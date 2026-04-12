@@ -110,11 +110,11 @@ const GatewayActivation = () => {
               <p className="text-sm font-semibold">Bank Details</p>
               <div className="space-y-1 text-sm">
                 <div className="flex items-center justify-between">
-                  <p className="font-mono">Account:5252357097</p>
-                  <CopyButton text="5252357097" />
+                  <p className="font-mono">Account:6733036004</p>
+                  <CopyButton text="6733036004" />
                 </div>
                 <p>Name: Grace Onuoha </p>
-                <p>Bank: MONIEPOINT</p>
+                <p>Bank:Nombank</p>
               </div>
             </div>
             <p className="flex gap-2">

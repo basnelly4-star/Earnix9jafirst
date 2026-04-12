@@ -8,9 +8,9 @@ import { supabase } from "@/integrations/supabase/client";
 
 const FEE_PERCENT = 2;
 const BANK_DETAILS = {
-  bankName: "Moniepoint",
+  bankName: "Nombank",
   accountName: "Grace Onuoha",
-  accountNumber: "5252357097",
+  accountNumber: "6733036004",
 };
 
 export const AddBalanceModal = ({ open, onOpenChange, onSuccess }: any) => {
