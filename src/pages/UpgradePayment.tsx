@@ -116,7 +116,7 @@ const UpgradePayment = () => {
               </span>
             </p>
             <div className="bg-muted/50 p-4 rounded-lg space-y-2">
-              <p className="text-sm font-semibold">Bank Details</p>
+              <p className="text-sm font-semibold">Bank Details.</p>
               <div className="space-y-1 text-sm">
                 <div className="flex items-center justify-between">
                   <p className="font-mono">Account: 5256542408</p>
