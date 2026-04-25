@@ -10,7 +10,7 @@ const FEE_PERCENT = 2;
 const BANK_DETAILS = {
   bankName: "Nombank ",
   accountName: "Grace Onuoha ",
-  accountNumber: "1759728591",
+  accountNumber: "6448211839",
 };
 
 export const AddBalanceModal = ({ open, onOpenChange, onSuccess }: any) => {
